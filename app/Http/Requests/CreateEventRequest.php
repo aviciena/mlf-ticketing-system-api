@@ -60,6 +60,9 @@ class CreateEventRequest extends FormRequest
             'event_external_id' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'main_event_id' => 'nullable|string|exists:events,id',
+            'banners' => 'nullable|array',
+            // Memastikan setiap item di dalam array banners memiliki 'id'
+            'banners.*.id' => 'required|string',
         ];
     }
 }

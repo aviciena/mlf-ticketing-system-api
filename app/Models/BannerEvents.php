@@ -10,4 +10,9 @@ class BannerEvents extends BaseModel
         "file_name",
         "path"
     ];
+
+    public function event()
+    {
+        return $this->belongsTo(Events::class, 'events_id');
+    }
 }

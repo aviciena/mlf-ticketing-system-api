@@ -38,6 +38,7 @@ class EventResource extends JsonResource
         }
 
         $isHaveSubEvents = count($this->subEvents) > 0;
+        $isHaveBanners = count($this->banners) > 0;
 
         return [
             'id' => $this->id,
@@ -63,7 +64,8 @@ class EventResource extends JsonResource
             'interval' => $this->interval,
             'api_key' => $this->api_key,
             'description' => $this->description,
-            'sub_events' => $isHaveSubEvents ? EventResource::collection($this->whenLoaded('subEvents')) : null // Memanggil relasi sub_events hanya jika sudah di-load (Eager Loading)
+            'sub_events' => $isHaveSubEvents ? EventResource::collection($this->whenLoaded('subEvents')) : null, // Memanggil relasi sub_events hanya jika sudah di-load (Eager Loading)
+            'banners' => $isHaveBanners ? BannerEventsResource::collection($this->whenLoaded('banners')) : null
         ];
     }
 }

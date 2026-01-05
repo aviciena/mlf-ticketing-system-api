@@ -36,6 +36,8 @@ class SubEventResource extends JsonResource
             Events::where('id', $this->id)->update(['status_id' => 3]);
         }
 
+        $isHaveBanners = count($this->banners) > 0;
+
         return [
             'id' => $this->id,
             'venue_id' => $this->venue->id ?? null,
@@ -49,7 +51,8 @@ class SubEventResource extends JsonResource
             'end_date' => $this->end_date,
             'date_str' => Utils::formatRange($this->start_date, $this->end_date),
             'description' => $this->description,
-            'main_event_name' => $this->parentEvent->title
+            'main_event_name' => $this->parentEvent->title,
+            'banners' => $isHaveBanners ? BannerEventsResource::collection($this->whenLoaded('banners')) : null
         ];
     }
 }

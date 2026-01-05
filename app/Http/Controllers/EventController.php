@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateEventRequest;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\SubEventResource;
+use App\Models\BannerEvents;
 use App\Models\Events;
 use App\Models\EventStatus;
 use App\Models\EventTicket;
@@ -14,6 +15,8 @@ use App\Models\User;
 use App\Services\EventIdGenerator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Mews\Purifier\Facades\Purifier;
 
@@ -22,7 +25,7 @@ class EventController extends BaseController
     //Get All Events
     public function index(Request $request)
     {
-        $query = Events::with(['venue', 'status', 'subEvents'])
+        $query = Events::with(['venue', 'status', 'subEvents', 'banners'])
             ->whereNull('parent_id')
             ->orderBy('status_id', 'asc')
             ->orderBy('start_date', 'asc');
@@ -53,7 +56,7 @@ class EventController extends BaseController
     //Find Sub Events
     public function findSubEvent($id)
     {
-        $subEvent = Events::with("parentEvent")->find($id);
+        $subEvent = Events::with(["parentEvent", "banners"])->find($id);
         if (!$subEvent) {
             return response()->json([
                 'success' => false,
@@ -103,8 +106,17 @@ class EventController extends BaseController
         }
         $event = Events::create($validated);
 
+        if ($validated['banners']) {
+            // Get all id from banners data
+            $bannersId = collect($validated['banners'])->pluck('id')->toArray();
+
+            // Update banners events id
+            BannerEvents::whereIn('file_name_id', $bannersId)
+                ->update(['events_id' => $event->id]);
+        }
+
         return $this->sendResponse(
-            new EventResource($event->load(['venue', 'status'])),
+            new EventResource($event->load(['venue', 'status', 'banners'])),
             $message,
             null,
             201
@@ -137,6 +149,9 @@ class EventController extends BaseController
             'endpoint' => 'nullable|string',
             'api_key' => 'nullable|string',
             'description' => 'nullable|string',
+            'banners' => 'nullable|array',
+            // Memastikan setiap item di dalam array banners memiliki 'id'
+            'banners.*.id' => 'required|string',
         ]);
 
         $today = Carbon::now();
@@ -160,8 +175,18 @@ class EventController extends BaseController
             ['status_id' => $statusId]
         ));
 
+        if ($validated['banners']) {
+            // Get all id from banners data
+            $bannersId = collect($validated['banners'])->pluck('id')->toArray();
+
+            // Update banners events id
+            BannerEvents::whereIn('file_name_id', $bannersId)
+                ->update(['events_id' => $event->id]);
+        }
+
+
         return $this->sendResponse(
-            new EventResource($event->load(['venue', 'status'])),
+            new EventResource($event->load(['venue', 'status', 'banners'])),
             'Event updated successfully.'
         );
     }
@@ -197,6 +222,18 @@ class EventController extends BaseController
         // Delete event ticket
         EventTicket::whereIn('id', $eventTicketsId)->delete();
 
+        // Delete Banners Event
+        $paths = BannerEvents::where('events_id', $event->id)->pluck('path');
+
+        // 1. Siapkan path lengkap untuk semua file
+        $fullPaths = collect($paths)->map(fn($path) => $path)->toArray();
+
+        // 2. Hapus semua file sekaligus dari storage
+        Storage::disk('public')->delete($fullPaths);
+
+        // 3. Hapus semua record dari database dengan satu query
+        BannerEvents::where('events_id', $event->id)->delete();
+
         $event->delete();
 
         return response()->json([
@@ -204,5 +241,73 @@ class EventController extends BaseController
             'message' => 'Event deleted successfully.',
             'data' => []
         ]);
+    }
+
+    public function upload(Request $request)
+    {
+        // 1. Validasi input
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        // 2. Cek apakah ada file yang diunggah
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+
+            // Memberikan nama unik untuk file
+            $filename = time() . '_' . $file->getClientOriginalName();
+
+            // Simpan ke folder 'uploads' di disk 'public'
+            $path = $file->storeAs('uploads', $filename, 'public');
+            BannerEvents::create([
+                'file_name_id' => pathinfo($filename, PATHINFO_FILENAME),
+                'file_name' => $file->getClientOriginalName(),
+                'path' => $path
+            ]);
+
+            // 3. Kembalikan respon sukses
+            return response()->json([
+                'success' => true,
+                'message' => 'Gambar berhasil diunggah',
+                'id' => pathinfo($filename, PATHINFO_FILENAME),
+                'name' =>  $file->getClientOriginalName()
+            ], 201);
+        }
+
+        return response()->json(['message' => 'File tidak ditemukan'], 400);
+    }
+
+    public function destroy($id)
+    {
+        // 1. Cari data di database
+        $banner = BannerEvents::where('file_name_id', $id)->firstOrFail();
+
+        if (!$banner) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        // 2. Cek apakah ada file yang tersimpan di kolom 'path'
+        if ($banner->path) {
+            // Hapus file dari disk 'public'
+            if (Storage::disk('public')->exists($banner->path)) {
+                Storage::disk('public')->delete($banner->path);
+            }
+        }
+
+        // 3. Hapus data di database atau kosongkan kolom gambarnya saja
+        // Jika ingin hapus baris data:
+        $banner->delete();
+
+        // Atau jika hanya ingin menghapus gambarnya saja tapi user tetap ada:
+        // $user->update(['image' => null]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Gambar berhasil dihapus!'
+        ], 200);
     }
 }
