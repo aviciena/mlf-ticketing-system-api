@@ -26,6 +26,7 @@ class Events extends BaseModel
         'created_by',
         'updated_by',
         'description',
+        'parent_id'
     ];
 
     public function user()

@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'cors'])->group(function () {
         Route::post('/', [EventController::class, 'create']);
         Route::put('/{id}', [EventController::class, 'update']);
         Route::delete('/{id}', [EventController::class, 'delete']);
+        Route::get('/sub-event/{id}', [EventController::class, 'findSubEvent']);
     });
 
     Route::prefix('event-tickets')->group(function () {

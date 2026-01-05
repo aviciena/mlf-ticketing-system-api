@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateEventRequest;
 use App\Http\Resources\EventResource;
+use App\Http\Resources\SubEventResource;
 use App\Models\Events;
 use App\Models\EventStatus;
 use App\Models\EventTicket;
@@ -20,7 +22,7 @@ class EventController extends BaseController
     //Get All Events
     public function index(Request $request)
     {
-        $query = Events::with(['venue', 'status'])
+        $query = Events::with(['venue', 'status', 'subEvents'])
             ->whereNull('parent_id')
             ->orderBy('status_id', 'asc')
             ->orderBy('start_date', 'asc');
@@ -48,22 +50,29 @@ class EventController extends BaseController
         );
     }
 
-    public function create(Request $request)
+    //Find Sub Events
+    public function findSubEvent($id)
     {
-        $validated = $request->validate([
-            'venue_id' => 'required|string|exists:venues,id',
-            'title' => ['required', 'string', 'max:255', Rule::unique('events')->where(function ($query) use ($request) {
-                return $query->where('venue_id', $request->venue_id);
-            })],
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'icon' => 'nullable|string',
-            'auto_sync' => 'nullable|boolean',
-            'is_sync_interval' => 'nullable|boolean',
-            'sync_query' => 'nullable|string',
-            'event_external_id' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-        ]);
+        $subEvent = Events::with("parentEvent")->find($id);
+        if (!$subEvent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sub Event not found',
+                'data' => []
+            ], 422);
+        }
+
+        return $this->sendResponse(
+            new SubEventResource($subEvent),
+            'Sub-Event retrieved successfully.'
+        );
+    }
+
+    public function create(CreateEventRequest $request)
+    {
+        $message = 'Event created successfully.';
+
+        $validated = $request->validated();
 
         $today = Carbon::now();
         $startDate = Carbon::parse($request->start_date);
@@ -88,11 +97,15 @@ class EventController extends BaseController
         // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
         $validated['description'] = Purifier::clean($request->description);
 
+        if (isset($validated['main_event_id'])) {
+            $validated["parent_id"] = $validated['main_event_id'];
+            $message = 'Sub-Event created successfully.';
+        }
         $event = Events::create($validated);
 
         return $this->sendResponse(
             new EventResource($event->load(['venue', 'status'])),
-            'Event created successfully.',
+            $message,
             null,
             201
         );
@@ -109,7 +122,7 @@ class EventController extends BaseController
             ], 422);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'venue_id' => 'sometimes|string|exists:venues,id',
             'title' => ['sometimes', 'string', 'max:255', Rule::unique('events')->ignore($event->id)->where(function ($query) use ($request) {
                 return $query->where('venue_id', $request->venue_id);
@@ -123,6 +136,7 @@ class EventController extends BaseController
             'event_external_id' => 'nullable|string|max:255',
             'endpoint' => 'nullable|string',
             'api_key' => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
 
         $today = Carbon::now();
@@ -138,8 +152,11 @@ class EventController extends BaseController
 
         $statusId = EventStatus::where('code', $statusCode)->first()['id'];
 
+        // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
+        $validated['description'] = Purifier::clean($request->description);
+
         $event->update(array_merge(
-            $request->all(),
+            $validated,
             ['status_id' => $statusId]
         ));
 
