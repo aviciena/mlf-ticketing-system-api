@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\EventTicketResource;
+use App\Http\Resources\EventTicketsOptionsResource;
+use App\Http\Resources\StatusResource;
+use App\Models\Event;
+use App\Models\Events;
+use App\Models\EventTicket;
+use App\Models\HolderCategories;
+use App\Models\PaymentStatus;
+use App\Models\TicketStatus;
+use App\Models\ValidityTicket;
+use Illuminate\Http\Request;
+
+class OptionsController extends BaseController
+{
+    // Get Options
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        $event = Events::where('id', $user->event_id)->first();
+        $eventList = Events::selectRaw('id, title')->get();
+        $eventTicket = EventTicket::with('validityType')->where('event_id', $user->event_id)->get();
+        $paymentStatus = PaymentStatus::orderBy('description', 'asc')->get();
+        $ticketStatus = TicketStatus::whereIn('code', ['booked', 'issued'])->get();
+        $validityTickets = ValidityTicket::whereIn('code', ['sd', 'ad', 'adt'])->get();
+        $holderCategories = HolderCategories::all();
+        $status = TicketStatus::whereNotIn('code', ['canceled'])->get();
+
+        return $this->sendResponse(
+            [
+                'event' => [
+                    'id' => $event->id ?? null,
+                    'name' => $event->title ?? null,
+                    'start_date' => $event->start_date ?? null,
+                    'end_date' => $event->end_date ?? null
+                ],
+                'event_list' => $eventList,
+                'event_tickets' => EventTicketsOptionsResource::collection($eventTicket),
+                'payment_status' => StatusResource::collection($paymentStatus),
+                'ticket_status' => StatusResource::collection($ticketStatus),
+                'validity_ticket' => StatusResource::collection($validityTickets),
+                'categories' => StatusResource::collection($holderCategories),
+                'status' => StatusResource::collection($status),
+            ],
+            'Options retrieved successfully.',
+        );
+    }
+}

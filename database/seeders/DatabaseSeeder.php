@@ -1,0 +1,26 @@
+<?php
+
+namespace Database\Seeders;
+
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        User::factory()->create([
+            'username' => 'admin',
+            'password' => Hash::make('password'),
+            'name' => fake()->name(),
+            'role_id' => 1,
+            'is_admin' => true
+        ]);
+    }
+}
