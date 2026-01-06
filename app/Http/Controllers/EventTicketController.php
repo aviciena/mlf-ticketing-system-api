@@ -20,7 +20,6 @@ class EventTicketController extends BaseController
     {
         $eventId = $request->user()->event_id;
         $query = EventTicket::with(['event', 'category', 'validityType'])
-            ->where('event_id', $eventId)
             ->orderBy('title', 'asc');
 
         // search by event ticket name
@@ -29,6 +28,12 @@ class EventTicketController extends BaseController
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('title', 'LIKE', '%' . $searchTerm . '%');
             });
+        }
+
+        if ($request->has('id') && $request->id != '') {
+            $query->where('event_id', $request->id);
+        } else {
+            $query->where('event_id', $eventId);
         }
 
         // Offset Pagination
@@ -78,7 +83,7 @@ class EventTicketController extends BaseController
             'title' => ['required', 'string', 'max:255', Rule::unique('event_tickets')->where(function ($query) use ($request) {
                 return $query->where('event_id', $request->event_id);
             })],
-            'event_ticket_category' => 'required|string|exists:events_ticket_category,description',
+            'event_ticket_category' => 'required|string|exists:events_ticket_categories,description',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'min_quantity' => 'nullable|integer|min:1',
@@ -129,7 +134,7 @@ class EventTicketController extends BaseController
 
         $request->validate([
             'title' => 'sometimes|required|string|max:255',
-            'event_ticket_category' => 'sometimes|required|string|exists:events_ticket_category,description',
+            'event_ticket_category' => 'sometimes|required|string|exists:events_ticket_categories,description',
             'start_date' => 'sometimes|required|date',
             'end_date' => 'sometimes|required|date|after_or_equal:start_date',
             'min_quantity' => 'sometimes|nullable|integer|min:1',

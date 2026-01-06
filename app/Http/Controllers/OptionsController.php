@@ -20,7 +20,9 @@ class OptionsController extends BaseController
     public function index(Request $request)
     {
         $user = $request->user();
-        $event = Events::where('id', $user->event_id)->first();
+        $event = Events::with(['subEvents' => function ($query) {
+            $query->select('parent_id', 'id', 'title as name', 'start_date', 'end_date');
+        }])->where('id', $user->event_id)->first();
         $eventList = Events::selectRaw('id, title')->get();
         $eventTicket = EventTicket::with('validityType')->where('event_id', $user->event_id)->get();
         $paymentStatus = PaymentStatus::orderBy('description', 'asc')->get();
@@ -29,13 +31,26 @@ class OptionsController extends BaseController
         $holderCategories = HolderCategories::all();
         $status = TicketStatus::whereNotIn('code', ['canceled'])->get();
 
+        $subEvents = null;
+        if ($event->subEvents && count($event->subEvents) > 0) {
+            $subEvents = $event->subEvents->toArray();
+            $parentData = [
+                'id' => $event->id,
+                'name' => $event->title,
+                'start_date' => $event->start_date,
+                'end_date' => $event->end_date
+            ];
+            array_unshift($subEvents, $parentData);
+        }
+
         return $this->sendResponse(
             [
                 'event' => [
                     'id' => $event->id ?? null,
                     'name' => $event->title ?? null,
                     'start_date' => $event->start_date ?? null,
-                    'end_date' => $event->end_date ?? null
+                    'end_date' => $event->end_date ?? null,
+                    'sub_events' => $subEvents,
                 ],
                 'event_list' => $eventList,
                 'event_tickets' => EventTicketsOptionsResource::collection($eventTicket),
