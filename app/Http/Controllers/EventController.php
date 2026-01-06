@@ -234,6 +234,19 @@ class EventController extends BaseController
         // 3. Hapus semua record dari database dengan satu query
         BannerEvents::where('events_id', $event->id)->delete();
 
+        // Delete banner event sub-events
+        $subEventsId = Events::where('parent_id', $event->id)->pluck('id');
+        $paths = BannerEvents::whereIn('events_id', $subEventsId)->pluck('path');
+
+        // 1. Siapkan path lengkap untuk semua file
+        $fullPaths = collect($paths)->map(fn($path) => $path)->toArray();
+
+        // 2. Hapus semua file sekaligus dari storage
+        Storage::disk('public')->delete($fullPaths);
+
+        // 3. Hapus semua record dari database dengan satu query
+        BannerEvents::whereIn('events_id', $subEventsId)->delete();
+
         $event->delete();
 
         return response()->json([
