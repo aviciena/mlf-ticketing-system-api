@@ -30,13 +30,13 @@ return [
 
         'main' => [
             'salt' => env('HASHIDS_SALT', 'your-secret-salt'),
-            'length' => env('HASHIDS_SALT', 10),
+            'length' => (int)env('HASHIDS_SALT', 10),
             'alphabet' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
         ],
 
         'users' => [
             'salt' => env('HASHIDS_SALT', 'your-salt-string'),
-            'length' => env('HASHIDS_SALT', 10),
+            'length' => (int)env('HASHIDS_SALT', 10),
             // 'alphabet' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
         ],
 
