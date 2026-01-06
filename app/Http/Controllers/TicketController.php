@@ -32,6 +32,11 @@ class TicketController extends BaseController
     public function index(Request $request)
     {
         $eventId = $request->user()->event_id;
+
+        if ($request->has('id') && $request->id != '') {
+            $eventId = $request->id;
+        }
+
         $sortBy = 'created_at';
         $sortOrder = 'desc';
 
@@ -427,16 +432,13 @@ class TicketController extends BaseController
                 // Create Holder
                 $holderCategoryId = HolderCategories::where('description', $ticketData['holder']['category'])->value('id');
                 $holder = Holder::create([
-                    'name' => $ticketData['holder']['name'],
                     'category_id' => $holderCategoryId,
-                    'photo' => $ticketData['holder']['photo'] ?? null,
-                    'organization' => $ticketData['holder']['organization'] ?? null,
-                    'position' => $ticketData['holder']['position'] ?? null,
-                    'dob' => !empty($ticketData['holder']['dob']) ? $ticketData['holder']['dob'] : null,
+                    'name' => $ticketData['holder']['name'],
                     'mobile_phone' => $ticketData['holder']['phone'] ?? null,
                     'email' => $ticketData['holder']['email'] ?? null,
-                    'address' => $ticketData['holder']['address'] ?? null,
-                    'city' => $ticketData['holder']['city'] ?? null,
+                    'sex' => $ticketData['holder']['sex'] ?? null,
+                    'organization' => $ticketData['holder']['organization'] ?? null,
+                    'position' => $ticketData['holder']['position'] ?? null,
                 ]);
 
                 $paymentId = $eventTicket['event_ticket_category_id'];

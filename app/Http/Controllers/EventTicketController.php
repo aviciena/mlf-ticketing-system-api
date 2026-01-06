@@ -19,7 +19,13 @@ class EventTicketController extends BaseController
     public function index(Request $request)
     {
         $eventId = $request->user()->event_id;
+
+        if ($request->has('id') && $request->id != '') {
+            $eventId = $request->id;
+        }
+
         $query = EventTicket::with(['event', 'category', 'validityType'])
+            ->where('event_id', $eventId)
             ->orderBy('title', 'asc');
 
         // search by event ticket name
@@ -28,12 +34,6 @@ class EventTicketController extends BaseController
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('title', 'LIKE', '%' . $searchTerm . '%');
             });
-        }
-
-        if ($request->has('id') && $request->id != '') {
-            $query->where('event_id', $request->id);
-        } else {
-            $query->where('event_id', $eventId);
         }
 
         // Offset Pagination

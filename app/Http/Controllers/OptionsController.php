@@ -20,11 +20,17 @@ class OptionsController extends BaseController
     public function index(Request $request)
     {
         $user = $request->user();
+        $eventId = $request->user()->event_id;
+
+        if ($request->has('id') && $request->id != '') {
+            $eventId = $request->id;
+        }
+
         $event = Events::with(['subEvents' => function ($query) {
             $query->select('parent_id', 'id', 'title as name', 'start_date', 'end_date');
-        }])->where('id', $user->event_id)->first();
+        }], 'status')->where('id', $user->event_id)->first();
         $eventList = Events::selectRaw('id, title')->get();
-        $eventTicket = EventTicket::with('validityType')->where('event_id', $user->event_id)->get();
+        $eventTicket = EventTicket::with('validityType')->where('event_id', $eventId)->get();
         $paymentStatus = PaymentStatus::orderBy('description', 'asc')->get();
         $ticketStatus = TicketStatus::whereIn('code', ['booked', 'issued'])->get();
         $validityTickets = ValidityTicket::whereIn('code', ['sd', 'ad', 'adt'])->get();
@@ -50,6 +56,7 @@ class OptionsController extends BaseController
                     'name' => $event->title ?? null,
                     'start_date' => $event->start_date ?? null,
                     'end_date' => $event->end_date ?? null,
+                    'is_completed' => $event->status ? $event->status->code == "completed" : false,
                     'sub_events' => $subEvents,
                 ],
                 'event_list' => $eventList,
