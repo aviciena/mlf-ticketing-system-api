@@ -54,6 +54,8 @@ class EventTicketResource extends JsonResource
             'title' => $this->title,
             'start_date' => Carbon::parse($this->start_date)->format('d/m/y H:i'),
             'end_date' => Carbon::parse($this->end_date)->format('d/m/y H:i'),
+            'sale_start_date' => Carbon::parse($this->sale_start_date)->format('d/m/y H:i'),
+            'sale_end_date' => Carbon::parse($this->sale_end_date)->format('d/m/y H:i'),
             'min_quantity' => $this->min_quantity,
             'max_quantity' => $this->max_quantity,
             'quota' => $this->quota,

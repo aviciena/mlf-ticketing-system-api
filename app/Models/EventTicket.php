@@ -13,6 +13,8 @@ class EventTicket extends BaseModel
         'event_ticket_category_id',
         'start_date',
         'end_date',
+        'sale_start_date',
+        'sale_end_date',
         'min_quantity',
         'max_quantity',
         'quota',

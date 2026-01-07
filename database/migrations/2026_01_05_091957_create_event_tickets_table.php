@@ -18,6 +18,8 @@ return new class extends Migration
             $table->unsignedBigInteger('event_ticket_category_id');
             $table->datetime('start_date');
             $table->datetime('end_date');
+            $table->datetime('sale_start_date')->nullable();
+            $table->datetime('sale_end_date')->nullable();
             $table->integer('min_quantity')->default(1);
             $table->integer('max_quantity')->default(1);
             $table->integer('quota')->default(1000);
