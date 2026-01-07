@@ -19,6 +19,8 @@ return new class extends Migration
             $table->boolean('is_admin')->default(false);
             $table->unsignedBigInteger('role_id')->default(2);
             $table->string('event_id')->nullable();
+            $table->string('created_by');
+            $table->string('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('RESTRICT');

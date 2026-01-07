@@ -23,7 +23,9 @@ class User extends Authenticatable
         'password',
         "is_admin",
         "role_id",
-        "event_id"
+        "event_id",
+        'created_by',
+        'updated_by',
     ];
 
     /**

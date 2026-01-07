@@ -32,6 +32,8 @@ return new class extends Migration
             $table->unsignedBigInteger('validity_type_id')->default(1);
             $table->boolean('auto_checkout')->default(false);
             $table->string('external_event_ticket_id')->nullable();
+            $table->string('created_by');
+            $table->string('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('event_id')->references('id')->on('events')->onDelete('RESTRICT');

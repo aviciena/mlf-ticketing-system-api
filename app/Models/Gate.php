@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\Hashidable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Gate extends BaseModel
 {
+    use Hashidable;
+
     protected $fillable = [
         'code',
         'description',

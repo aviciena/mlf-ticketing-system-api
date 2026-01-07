@@ -22,6 +22,8 @@ return new class extends Migration
             $table->dateTime('validity_end_date')->nullable();
             $table->boolean('allow_multiple_checkin')->default(false);
             $table->unsignedBigInteger('gates_id')->nullable();
+            $table->string('created_by');
+            $table->string('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('events_ticket_id')->references('id')->on('event_tickets')->onDelete('RESTRICT');

@@ -67,7 +67,11 @@ class VenueController extends BaseController
             return $this->sendError('Venue not found', [], 422);
         }
 
-        $venue->update($request->validated());
+        $validated = $request->validated();
+        $user = User::find($request->user()->id);
+        $validated['updated_by'] = $user->username;
+
+        $venue->update($validated);
 
         return $this->sendResponse(
             new VenueResource($venue),

@@ -27,6 +27,8 @@ class EventTicket extends BaseModel
         'validity_type_id',
         'auto_checkout',
         'external_event_ticket_id',
+        'created_by',
+        'updated_by',
     ];
 
     public function category()

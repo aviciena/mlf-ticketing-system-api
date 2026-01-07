@@ -104,6 +104,10 @@ class EventController extends BaseController
             $validated["parent_id"] = $validated['main_event_id'];
             $message = 'Sub-Event created successfully.';
         }
+
+        $user = User::find($request->user()->id);
+        $validated['created_by'] = $user->username;
+
         $event = Events::create($validated);
 
         if ($validated['banners']) {
@@ -168,7 +172,13 @@ class EventController extends BaseController
         $statusId = EventStatus::where('code', $statusCode)->first()['id'];
 
         // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
-        $validated['description'] = Purifier::clean($request->description);
+        $validated['description'] = Purifier::clean($validated['description'], [
+            'AutoFormat.RemoveEmpty' => true,
+            'AutoFormat.RemoveEmpty.RemoveNbsp' => true,
+        ]);
+
+        $user = User::find($request->user()->id);
+        $validated['updated_by'] = $user->username;
 
         $event->update(array_merge(
             $validated,

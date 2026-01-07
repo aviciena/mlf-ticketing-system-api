@@ -68,6 +68,7 @@ Route::middleware(['auth:sanctum', 'cors'])->group(function () {
 
     Route::prefix('gates')->group(function () {
         Route::get('/', [GateController::class, 'index']);
+        Route::get('/{id}', [GateController::class, 'findByEvent']);
         Route::post('/', [GateController::class, 'create']);
         Route::put('/{id}', [GateController::class, 'update']);
         Route::delete('/{id}', [GateController::class, 'delete']);

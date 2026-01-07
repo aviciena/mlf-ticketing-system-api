@@ -7,6 +7,7 @@ use App\Models\EventsTicketCategory;
 use App\Models\EventTicket;
 use App\Models\GateTicket;
 use App\Models\Ticket;
+use App\Models\User;
 use App\Models\ValidityTicket;
 use App\Services\EventTicketIdGenerator;
 use Illuminate\Http\Request;
@@ -106,12 +107,15 @@ class EventTicketController extends BaseController
         $categoryId = EventsTicketCategory::where('description', $request->event_ticket_category)->value('id');
         $validityId = ValidityTicket::where('description', $request->validity_type)->value('id');
 
+        $user = User::find($request->user()->id);
+
         $ticket = EventTicket::create(array_merge(
             $request->all(),
             [
                 'id' => $id,
                 'event_ticket_category_id' => $categoryId,
-                'validity_type_id' => $validityId
+                'validity_type_id' => $validityId,
+                'created_by' => $user->username
             ]
         ));
 
@@ -157,10 +161,12 @@ class EventTicketController extends BaseController
 
         $categoryId = EventsTicketCategory::where('description', $request->event_ticket_category)->value('id');
         $validityId = ValidityTicket::where('description', $request->validity_type)->value('id');
+        $user = User::find($request->user()->id);
 
         $ticket->update(array_merge($request->all(), [
             'event_ticket_category_id' => $categoryId,
-            'validity_type_id' => $validityId
+            'validity_type_id' => $validityId,
+            'updated_by' => $user->username
         ]));
 
         return $this->sendResponse(

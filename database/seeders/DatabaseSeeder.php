@@ -21,7 +21,8 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'name' => fake()->name(),
             'role_id' => 1,
-            'is_admin' => true
+            'is_admin' => true,
+            'created_by' => 'system'
         ]);
 
         Venues::factory()->create([

@@ -18,6 +18,8 @@ class GateResource extends JsonResource
             'id' => $this->hashid,
             'code' => $this->code,
             'description' => $this->description,
+            'event_name' => $this->events[0]->id,
+            'event_name_desc' => $this->events[0]->title,
             'name' => $this->description,
             'is_active' => $this->active == 1 ? true : false,
             'is_active_str' => $this->active == 1 ? 'Yes' : 'No',

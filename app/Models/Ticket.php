@@ -18,6 +18,8 @@ class Ticket extends BaseModel
         'validity_end_date',
         'allow_multiple_checkin',
         'gates_id',
+        'created_by',
+        'updated_by',
     ];
 
     public function gateTickets()
