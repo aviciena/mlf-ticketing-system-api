@@ -16,6 +16,7 @@ use App\Models\LogImportTickets;
 use App\Models\PaymentStatus;
 use App\Models\Ticket;
 use App\Models\TicketStatus;
+use App\Models\User;
 use App\Models\ValidityTicket;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -180,13 +181,15 @@ class TicketController extends BaseController
     public function create(CreateTicketRequest $request)
     {
         $activeEventId = $request->user()->event_id;
-        return $this->doCreateTicket($request->all(), false, $activeEventId);
+        $userName = User::find($request->user()->id)->username;
+        return $this->doCreateTicket($request->all(), false, $activeEventId, $userName);
     }
 
     public function import(CreateTicketRequest $request)
     {
         $activeEventId = $request->user()->event_id;
-        return $this->doCreateTicket($request->all(), true, $activeEventId);
+        $userName = User::find($request->user()->id)->username;
+        return $this->doCreateTicket($request->all(), true, $activeEventId, $userName);
     }
 
     public function update(UpdateTicketRequest $request, $id)
@@ -234,6 +237,7 @@ class TicketController extends BaseController
             }
 
             $ticketStatusId = TicketStatus::where('description', $ticketStatus)->value('id');
+            $user = User::find($request->user()->id);
 
             $data = [
                 'events_ticket_id' => $request['events_ticket_id'],
@@ -242,7 +246,8 @@ class TicketController extends BaseController
                 'validity_ticket_id' => $validity['id'],
                 'validity_start_date' => $eventTicket['start_date'],
                 'validity_end_date' => $validity['code'] != "ad" ? $eventTicket['end_date'] : null,
-                'allow_multiple_checkin' => $eventTicket['allow_multiple_checkin']
+                'allow_multiple_checkin' => $eventTicket['allow_multiple_checkin'],
+                'updated_by' => $user->username
             ];
 
             // update Ticket
@@ -326,6 +331,7 @@ class TicketController extends BaseController
      */
     public function upload(Request $request)
     {
+        $userName = User::find($request->user()->id)->username;
         $validator = Validator::make($request->all(), [
             'csv_file' => 'required|file|mimes:csv,txt|max:2048',
             'event_id' => 'required|string'
@@ -379,13 +385,13 @@ class TicketController extends BaseController
             $importTickets[] = $ticket;
         }
 
-        return $this->doCreateTicket($importTickets, true, $request->event_id);
+        return $this->doCreateTicket($importTickets, true, $request->event_id, $userName);
     }
 
     /**
      * Create Ticket or multiple ticket and or create or update import tickets status
      */
-    public function doCreateTicket($ticketList, $isImport = false, $activeEventId)
+    public function doCreateTicket($ticketList, $isImport = false, $activeEventId, $userName)
     {
         try {
             DB::beginTransaction();
@@ -468,7 +474,8 @@ class TicketController extends BaseController
                     'validity_start_date' => $eventTicket['start_date'],
                     'validity_end_date' => $validity['code'] != "ad" ? $eventTicket['end_date'] : null,
                     'allow_multiple_checkin' => $eventTicket['allow_multiple_checkin'],
-                    'holder_ticket_id' => $holder->id
+                    'holder_ticket_id' => $holder->id,
+                    'created_by' => $userName
                 ];
 
                 $ticketId = !empty($ticketData['ticket_id']) ? $ticketData['ticket_id'] : $this->generateRandomString();

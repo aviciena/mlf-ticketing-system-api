@@ -9,7 +9,6 @@ use App\Models\Gate;
 use App\Models\GateEvent;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +20,6 @@ class GateController extends BaseController
     public function index(Request $request)
     {
         $user = User::with('role')->find($request->user()->id);
-        Log::info($user->role->code);
         $eventId = $request->user()->event_id;
 
         $event = Events::with(['subEvents' => function ($query) {
@@ -106,7 +104,7 @@ class GateController extends BaseController
         ]);
 
         $validate['code'] = strtolower(str_replace(" ", "", $request->description)) . '_' . strtolower($validate['event_name']);
-        $validate['created_by'] = $user->name;
+        $validate['created_by'] = $user->username;
 
         $gate = Gate::create($validate);
         GateEvent::create(['gate_id' => $gate->id, 'event_id' => $validate['event_name']]);
@@ -141,7 +139,7 @@ class GateController extends BaseController
         ]);
 
         $request['code'] = strtolower(str_replace(" ", "", $request->description));
-        $request['updated_by'] = $user->name;
+        $request['updated_by'] = $user->username;
 
         GateEvent::where('gate_id', $gate->id)->update(['event_id' => $request['event_name']]);
 
