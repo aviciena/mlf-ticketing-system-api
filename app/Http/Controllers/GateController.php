@@ -9,6 +9,7 @@ use App\Models\Gate;
 use App\Models\GateEvent;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -19,6 +20,8 @@ class GateController extends BaseController
      */
     public function index(Request $request)
     {
+        $user = User::with('role')->find($request->user()->id);
+        Log::info($user->role->code);
         $eventId = $request->user()->event_id;
 
         $event = Events::with(['subEvents' => function ($query) {
@@ -26,15 +29,17 @@ class GateController extends BaseController
         }])->where('id', $eventId)->first('id');
 
         $eventList = [$event->id];
-        if ($event->subEvents && count($event->subEvents) > 0) {
+        if ($event->subEvents && count($event->subEvents) > 0 && $user->role->code == 'admin') {
             foreach ($event->subEvents as $subEvent) {
                 array_push($eventList, $subEvent->id);
             }
         }
 
-        $query = Gate::with('events')->whereHas('events', function ($query) use ($eventList) {
-            $query->whereIn('event_id', $eventList); // Ini merujuk ke kolom di tabel pivot GateEvents
-        });
+        $query = Gate::with('events')
+            ->join('gate_events', 'gates.id', '=', 'gate_events.gate_id')
+            ->whereIn('gate_events.event_id', $eventList)
+            ->select('gates.*')
+            ->orderBy('gate_events.event_id', 'desc');
 
         if ($request->filled('active')) {
             $query->where('active', $request->active);
