@@ -279,6 +279,9 @@ class TicketController extends BaseController
             return $this->sendError('Unable to delete, ticket number already use', [], 400);
         }
 
+        $eventTicket = EventTicket::find($ticket->events_ticket_id);
+        $eventTicket->increment('quota');
+
         $ticket->delete();
 
         return $this->sendResponse([], 'Ticket Number deleted successfully');
@@ -410,6 +413,8 @@ class TicketController extends BaseController
 
                     $logImportTickets[] = $logImportTicket;
                     continue;
+                } else {
+                    $eventTicket->decrement('quota');
                 }
 
                 //Check if ticket is not empty and already exist or not

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('log_import_tickets', function (Blueprint $table) {
             $table->id();
+            $table->string('active_event_id')->nullable();
             $table->string('ticket_id')->nullable();
             $table->unsignedBigInteger('events_ticket_id')->nullable();
             $table->string('events_ticket_title')->nullable();
