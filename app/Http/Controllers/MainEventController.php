@@ -19,7 +19,8 @@ class MainEventController extends BaseController
             $query->whereNotNull('price')
                 ->where('sale_start_date', '<=', $now)
                 ->where('sale_end_date', '>=', $now)
-                ->orderBy('created_at', 'asc');
+                ->orderBy('start_date', 'asc')
+                ->orderBy('title', 'asc');
         }])
             ->whereNull('parent_id')
             ->whereBetween('start_date', [$startRange, $endRange])
