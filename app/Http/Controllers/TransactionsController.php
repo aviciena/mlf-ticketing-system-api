@@ -13,8 +13,13 @@ use App\Models\Transaction;
 use App\Models\TransactionDetails;
 use App\Models\ValidityTicket;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+
+use Xendit\Invoice\CreateInvoiceRequest;
+use Xendit\Invoice\InvoiceApi;
 
 class TransactionsController extends BaseController
 {
@@ -42,20 +47,53 @@ class TransactionsController extends BaseController
         }
 
         $totalPrice = $ubTotal + $validate['donation_amount'] + $validate['fee'];
-        $data = [
-            'id' => 'INV-' . date('YmdHis') . '-' . strtoupper(Str::random(4)),
-            'event_id' => $validate['event']['id'],
-            'donation' => $validate['donation_amount'],
-            'fee' => $validate['fee'],
-            'subtotal' => $ubTotal,
-            'total_ticket' => $totalTicket,
-            'total_price' => $totalPrice,
-            'status' => 'pending'
+        $invoiceId = 'INV-' . date('YmdHis') . '-' . strtoupper(Str::random(4));
+
+        $holderObj = [
+            'name' => $validate['name'],
+            'given_names' => $validate['name'],
+            'mobile_phone' => $validate['phone'],
+            'phone_number' => $validate['phone'],
+            'email' => $validate['email'],
+            'sex' => $validate['gender']
         ];
 
+        $xenditItems = $validate['tickets'];
+        $xenditItems[] = ['name' => 'fee', 'price' => $validate['fee'], 'quantity' => 1];
+        if ($validate['donation_amount'] > 0) {
+            $xenditItems[] = ['name' => 'donation', 'price' => $validate['donation_amount'], 'quantity' => 1];
+        }
+
+        // Create Xendit Request Payment
+        $xenditResult = $this->doGetXendit([
+            'invoiceId' => $invoiceId,
+            'customer' => $holderObj,
+            'tickets' => $xenditItems,
+            'amount' => $totalPrice,
+            'description' => 'Pembelian Tiket ' . $validate['event']['name']
+        ]);
+
+        if (is_null($xenditResult)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal terhubung ke layanan pembayaran Xendit.'
+            ], 500);
+        }
 
         try {
             DB::beginTransaction();
+
+            $data = [
+                'id' => $invoiceId,
+                'event_id' => $validate['event']['id'],
+                'donation' => $validate['donation_amount'],
+                'fee' => $validate['fee'],
+                'subtotal' => $ubTotal,
+                'total_ticket' => $totalTicket,
+                'total_price' => $totalPrice,
+                'reference_code' => $xenditResult['invoice_url'],
+                'status' => 'pending'
+            ];
 
             // Create Transaction
             $transaction = Transaction::create($data);
@@ -70,13 +108,8 @@ class TransactionsController extends BaseController
             foreach ($validate['tickets'] as $ticket) {
                 $eventTicket = EventTicket::find($ticket['id']);
                 $holderCategoryId = HolderCategories::where('description', 'Visitor Online')->value('id');
-                $holder = Holder::create([
-                    'category_id' => $holderCategoryId,
-                    'name' => $validate['name'],
-                    'mobile_phone' => $validate['phone'],
-                    'email' => $validate['email'],
-                    'sex' => $validate['gender']
-                ]);
+                $holderObj['category_id'] = $holderCategoryId;
+                $holder = Holder::create($holderObj);
 
                 $paymentId = $eventTicket['event_ticket_category_id'];
                 $validity = ValidityTicket::where('id', $eventTicket['validity_type_id'])->first();
@@ -125,6 +158,36 @@ class TransactionsController extends BaseController
         }
 
 
-        return $this->sendResponse($transaction, 'Transaction Created');
+        return $this->sendResponse([
+            'invoice_url' => $xenditResult['invoice_url'],
+            'transaction_id' => $transaction->id
+        ], 'Transaction Created');
+    }
+
+    private function doGetXendit($data)
+    {
+        // Mengonversi durasi 15 menit menjadi total detik (900)
+        $expiredDuration = CarbonInterval::minutes(15)->totalSeconds;
+
+        $apiInstance = new InvoiceApi();
+        $createInvoiceRequest = new CreateInvoiceRequest([
+            'external_id' => $data['invoiceId'],
+            'description' => $data['description'],
+            'amount' => $data['amount'],
+            'invoice_duration' => $expiredDuration,
+            'currency' => 'IDR',
+            'customer' => $data['customer'],
+            'items' => $data['tickets'],
+            'success_redirect_url' => config('services.xendit.success_redirect_url'),
+            'failure_redirect_url' => config('services.xendit.failure_redirect_url'),
+        ]);
+
+        try {
+            return $apiInstance->createInvoice($createInvoiceRequest);
+        } catch (\Xendit\XenditSdkException $e) {
+            Log::info('Exception when calling InvoiceApi->createInvoice: ' . $e->getMessage());
+            Log::info('Full Error: ' . json_encode($e->getFullError()));
+            return null;
+        }
     }
 }

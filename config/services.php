@@ -31,4 +31,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'web_hook_token' => env('XENDIT_WEBHOOK_TOKEN'),
+        'success_redirect_url' => env('XENDIT_SUCCESS_REDIRECT_URL'),
+        'failure_redirect_url' => env('XENDIT_FAILURE_REDIRECT_URL'),
+    ],
+
 ];

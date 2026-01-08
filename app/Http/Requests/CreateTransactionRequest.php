@@ -46,6 +46,7 @@ class CreateTransactionRequest extends FormRequest
             'email' => 'required|string',
             'phone' => 'required|string',
             'event.id' => 'required|string|exists:events,id',
+            'event.name' => 'required|string',
             'amount' => 'required|integer',
             'total' => 'required|integer',
 

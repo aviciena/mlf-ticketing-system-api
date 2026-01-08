@@ -33,7 +33,7 @@ Route::prefix('main')->middleware(['validate.x.functions', 'cors'])->group(funct
     Route::get('/', [MainEventController::class, 'index']);
 });
 
-Route::prefix('transaction')->middleware(['validate.x.functions', 'cors'])->group(function () {
+Route::prefix('payment')->middleware(['validate.x.functions', 'cors'])->group(function () {
     Route::post('/', [TransactionsController::class, 'create']);
 });
 
