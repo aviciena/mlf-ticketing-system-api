@@ -69,7 +69,7 @@ class TransactionsController extends BaseController
             // Looping for Create Ticket
             foreach ($validate['tickets'] as $ticket) {
                 $eventTicket = EventTicket::find($ticket['id']);
-                $holderCategoryId = HolderCategories::where('description', 'visitor_online')->value('id');
+                $holderCategoryId = HolderCategories::where('description', 'Visitor Online')->value('id');
                 $holder = Holder::create([
                     'category_id' => $holderCategoryId,
                     'name' => $validate['name'],
