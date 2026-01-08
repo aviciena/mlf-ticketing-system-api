@@ -34,6 +34,7 @@ return new class extends Migration
             $table->string('external_event_ticket_id')->nullable();
             $table->string('created_by');
             $table->string('updated_by')->nullable();
+            $table->longText('description')->nullable();
             $table->timestamps();
 
             $table->foreign('event_id')->references('id')->on('events')->onDelete('RESTRICT');

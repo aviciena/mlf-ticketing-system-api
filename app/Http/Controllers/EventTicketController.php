@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateEventTicketRequest;
 use App\Http\Resources\EventTicketResource;
 use App\Models\EventsTicketCategory;
 use App\Models\EventTicket;
@@ -12,7 +13,6 @@ use App\Models\ValidityTicket;
 use App\Services\EventTicketIdGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class EventTicketController extends BaseController
 {
@@ -77,40 +77,20 @@ class EventTicketController extends BaseController
     /**
      * 
      */
-    public function create(Request $request)
+    public function create(CreateEventTicketRequest $request)
     {
-        $request->validate([
-            'event_id' => 'required|string|exists:events,id',
-            'title' => ['required', 'string', 'max:255', Rule::unique('event_tickets')->where(function ($query) use ($request) {
-                return $query->where('event_id', $request->event_id);
-            })],
-            'event_ticket_category' => 'required|string|exists:events_ticket_categories,description',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'sale_start_date' => 'nullable|date',
-            'sale_end_date' => 'nullable|date|after_or_equal:sale_start_date',
-            'min_quantity' => 'nullable|integer|min:1',
-            'max_quantity' => 'nullable|integer|min:1',
-            'quota' => 'nullable|integer|min:0',
-            'price' => 'nullable|integer|min:0',
-            'original_price' => 'nullable|integer|min:0',
-            'discount_type' => 'nullable|string',
-            'discount_amount' => 'nullable|integer|min:0',
-            'price_after_discount' => 'nullable|integer|min:0',
-            'allow_multiple_checkin' => 'nullable|boolean',
-            'validity_type' => 'nullable|string|exists:validity_tickets,description',
-            'auto_checkout' => 'nullable|boolean',
-            'external_event_ticket_id' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $id = EventTicketIdGenerator::generateUnique($request->event_id);
         $categoryId = EventsTicketCategory::where('description', $request->event_ticket_category)->value('id');
         $validityId = ValidityTicket::where('description', $request->validity_type)->value('id');
 
         $user = User::find($request->user()->id);
+        // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
+        $validated['description'] = clean($request->description);
 
         $ticket = EventTicket::create(array_merge(
-            $request->all(),
+            $validated,
             [
                 'id' => $id,
                 'event_ticket_category_id' => $categoryId,
@@ -138,7 +118,7 @@ class EventTicketController extends BaseController
             ], 422);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'event_ticket_category' => 'sometimes|required|string|exists:events_ticket_categories,description',
             'start_date' => 'sometimes|required|date',
@@ -157,13 +137,20 @@ class EventTicketController extends BaseController
             'validity_type' => 'nullable|string|exists:validity_tickets,description',
             'auto_checkout' => 'sometimes|nullable|boolean',
             'external_event_ticket_id' => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
 
         $categoryId = EventsTicketCategory::where('description', $request->event_ticket_category)->value('id');
         $validityId = ValidityTicket::where('description', $request->validity_type)->value('id');
         $user = User::find($request->user()->id);
 
-        $ticket->update(array_merge($request->all(), [
+        // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
+        $validated['description'] = clean($validated['description'], [
+            'AutoFormat.RemoveEmpty' => true,
+            'AutoFormat.RemoveEmpty.RemoveNbsp' => true,
+        ]);
+
+        $ticket->update(array_merge($validated, [
             'event_ticket_category_id' => $categoryId,
             'validity_type_id' => $validityId,
             'updated_by' => $user->username

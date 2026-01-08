@@ -18,7 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Mews\Purifier\Facades\Purifier;
 
 class EventController extends BaseController
 {
@@ -98,7 +97,7 @@ class EventController extends BaseController
         $validated['created_by'] = $userName;
 
         // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
-        $validated['description'] = Purifier::clean($request->description);
+        $validated['description'] = clean($request->description);
 
         if (isset($validated['main_event_id'])) {
             $validated["parent_id"] = $validated['main_event_id'];
@@ -172,7 +171,7 @@ class EventController extends BaseController
         $statusId = EventStatus::where('code', $statusCode)->first()['id'];
 
         // Membersihkan HTML sebelum disimpan atau ditampilkan dari tag script
-        $validated['description'] = Purifier::clean($validated['description'], [
+        $validated['description'] = clean($validated['description'], [
             'AutoFormat.RemoveEmpty' => true,
             'AutoFormat.RemoveEmpty.RemoveNbsp' => true,
         ]);

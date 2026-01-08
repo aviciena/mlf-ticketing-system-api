@@ -29,6 +29,7 @@ class EventTicket extends BaseModel
         'external_event_ticket_id',
         'created_by',
         'updated_by',
+        'description'
     ];
 
     public function category()

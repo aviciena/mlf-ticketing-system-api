@@ -76,6 +76,7 @@ class EventTicketResource extends JsonResource
             'is_expired' => $is_expired,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'description' => $this->description
         ];
     }
 }

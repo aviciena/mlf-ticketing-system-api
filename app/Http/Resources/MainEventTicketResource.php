@@ -18,7 +18,7 @@ class MainEventTicketResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'description' => [],
+            'description' => $this->description,
             'end_date' => Utils::getDateFormat($this->sale_end_date),
             'end_time' => Utils::getHourFormat($this->sale_end_date),
             'price' => $this->price,
