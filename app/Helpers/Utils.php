@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class Utils
 {
@@ -90,5 +91,18 @@ class Utils
     public static function isExpired($deadline)
     {
         return Carbon::now('Asia/Jakarta')->gt($deadline);
+    }
+
+    public static function generateRandomString()
+    {
+        $currentDate = Carbon::now();
+        $year = $currentDate->format('y');
+        $month = $currentDate->format('m');
+        $date = $currentDate->format('d');
+        $hour = $currentDate->format('H');
+
+        $randomChars = Str::random(6);
+
+        return $year . $month . $date . $hour . strtoupper($randomChars);
     }
 }

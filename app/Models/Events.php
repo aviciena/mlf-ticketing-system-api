@@ -80,4 +80,9 @@ class Events extends BaseModel
             'gate_id'         // Foreign key di tabel pivot untuk model tujuan
         );
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }

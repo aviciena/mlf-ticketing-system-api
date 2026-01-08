@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->string('id')->primary();
+            $table->string('parent_id')->nullable();
+            $table->string('transaction_id')->nullable();
             $table->unsignedBigInteger('events_ticket_id');
             $table->unsignedBigInteger('ticket_status_id');
             $table->unsignedBigInteger('payment_status_id');
@@ -32,6 +34,8 @@ return new class extends Migration
             $table->foreign('holder_ticket_id')->references('id')->on('holders')->onDelete('RESTRICT');
             $table->foreign('validity_ticket_id')->references('id')->on('validity_tickets')->onDelete('RESTRICT');
             $table->foreign('gates_id')->references('id')->on('gates')->onDelete('RESTRICT');
+            $table->foreign('parent_id')->references('id')->on('tickets')->onDelete('cascade');
+            $table->foreign('transaction_id')->references('id')->on('transactions')->onDelete('RESTRICT');
         });
     }
 

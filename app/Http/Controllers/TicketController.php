@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Utils;
 use App\Http\Requests\CreateTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Resources\LogImportResource;
@@ -22,7 +23,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class TicketController extends BaseController
@@ -478,7 +478,7 @@ class TicketController extends BaseController
                     'created_by' => $userName
                 ];
 
-                $ticketId = !empty($ticketData['ticket_id']) ? $ticketData['ticket_id'] : $this->generateRandomString();
+                $ticketId = !empty($ticketData['ticket_id']) ? $ticketData['ticket_id'] : Utils::generateRandomString();
 
                 // Create Ticket
                 $ticket = Ticket::create(array_merge($data, ['id' => $ticketId]));
@@ -529,18 +529,5 @@ class TicketController extends BaseController
                 'ticketList' => $ticketList
             ], 500);
         }
-    }
-
-    private function generateRandomString()
-    {
-        $currentDate = Carbon::now();
-        $year = $currentDate->format('y');
-        $month = $currentDate->format('m');
-        $date = $currentDate->format('d');
-        $hour = $currentDate->format('H');
-
-        $randomChars = Str::random(6);
-
-        return $year . $month . $date . $hour . strtoupper($randomChars);
     }
 }

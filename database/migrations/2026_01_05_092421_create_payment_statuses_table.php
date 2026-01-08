@@ -20,8 +20,8 @@ return new class extends Migration
         });
 
         DB::table('payment_status')->insert([
-            ['code' => 'paid', 'description' => 'Paid'],
-            ['code' => 'free', 'description' => 'Free']
+            ['code' => 'free', 'description' => 'Free'],
+            ['code' => 'paid', 'description' => 'Paid']
         ]);
     }
 

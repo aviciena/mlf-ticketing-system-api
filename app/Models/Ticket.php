@@ -56,4 +56,21 @@ class Ticket extends BaseModel
     {
         return $this->belongsTo(Gate::class, 'gates_id');
     }
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
+    }
+
+    // Untuk mengambil sub-events dari event ini
+    public function subTickets()
+    {
+        return $this->hasMany(Ticket::class, 'parent_id');
+    }
+
+    // Untuk mengetahui induk dari sub-event ini
+    public function parentTicket()
+    {
+        return $this->belongsTo(Ticket::class, 'parent_id');
+    }
 }

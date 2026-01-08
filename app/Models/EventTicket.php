@@ -51,4 +51,9 @@ class EventTicket extends BaseModel
     {
         return $this->hasMany(Ticket::class, 'events_ticket_id');
     }
+
+    public function transactions()
+    {
+        return $this->belongsToMany(Transaction::class, 'transaction_details');
+    }
 }
