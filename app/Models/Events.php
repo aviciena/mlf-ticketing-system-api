@@ -66,6 +66,11 @@ class Events extends BaseModel
         return $this->hasMany(BannerEvents::class, 'events_id');
     }
 
+    public function eventTickets()
+    {
+        return $this->hasMany(EventTicket::class, 'event_id');
+    }
+
     public function gates(): BelongsToMany
     {
         return $this->belongsToMany(

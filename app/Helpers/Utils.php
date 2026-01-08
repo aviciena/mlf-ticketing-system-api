@@ -46,4 +46,49 @@ class Utils
             return $start->translatedFormat('d F Y') . ' - ' . $end->translatedFormat('d F Y');
         }
     }
+
+    public static function formatRangeHour($startDate, $endDate)
+    {
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        return $start->format('H.i') . ' - ' . $end->format('H.i') . ' WIB';
+    }
+
+    public static function encode($string)
+    {
+        return base64_encode($string);
+    }
+
+    public static function decode($encrypted)
+    {
+        return base64_decode($encrypted);
+    }
+
+    public static function getDateFormat($dateString)
+    {
+        return Carbon::parse($dateString)
+            ->locale('id')
+            ->settings(['formatFunction' => 'translatedFormat'])
+            ->translatedFormat('l, d F Y');
+    }
+
+    public static function getHourFormat($dateString)
+    {
+        return Carbon::parse($dateString)->format('H.i \W\I\B');
+    }
+
+    public static function isDateRange($startDate, $endDate)
+    {
+        $now = Carbon::now('Asia/Jakarta');
+        $start = Carbon::parse($startDate)->startOfMinute();
+        $end = Carbon::parse($endDate)->startOfMinute();
+
+        return $now->greaterThanOrEqualTo($start) && $now->lessThanOrEqualTo($end);
+    }
+
+    public static function isExpired($deadline)
+    {
+        return Carbon::now('Asia/Jakarta')->gt($deadline);
+    }
 }
