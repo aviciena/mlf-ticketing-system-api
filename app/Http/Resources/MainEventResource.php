@@ -31,7 +31,7 @@ class MainEventResource extends JsonResource
             'tnc' => [],
             'ticket_list' => $isHaveEventTickets ? MainEventTicketResource::collection($this->whenLoaded('eventTickets')) : [],
             'max_ticket' => 20,
-            'additional_ticket' => $isHaveSubEvents ? MainEventSubEventResource::collection($this->whenLoaded('subEvents')) : null
+            'additional_ticket' => $isHaveSubEvents ? MainEventSubEventResource::collection($this->whenLoaded('subEvents'))[0] : null
         ];
     }
 }

@@ -65,19 +65,21 @@ class TransactionsController extends BaseController
         }
 
         // Create Xendit Request Payment
-        $xenditResult = $this->doGetXendit([
-            'invoiceId' => $invoiceId,
-            'customer' => $holderObj,
-            'tickets' => $xenditItems,
-            'amount' => $totalPrice,
-            'description' => 'Pembelian Tiket ' . $validate['event']['name']
-        ]);
+        if ($totalPrice > 0) {
+            $xenditResult = $this->doGetXendit([
+                'invoiceId' => $invoiceId,
+                'customer' => $holderObj,
+                'tickets' => $xenditItems,
+                'amount' => $totalPrice,
+                'description' => 'Pembelian Tiket ' . $validate['event']['name']
+            ]);
 
-        if (is_null($xenditResult)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal terhubung ke layanan pembayaran Xendit.'
-            ], 500);
+            if (is_null($xenditResult)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal terhubung ke layanan pembayaran Xendit.'
+                ], 500);
+            }
         }
 
         try {
@@ -91,9 +93,12 @@ class TransactionsController extends BaseController
                 'subtotal' => $ubTotal,
                 'total_ticket' => $totalTicket,
                 'total_price' => $totalPrice,
-                'reference_code' => $xenditResult['invoice_url'],
                 'status' => 'pending'
             ];
+
+            if ($xenditResult && $xenditResult['invoice_url']) {
+                $data['reference_code'] = $xenditResult['invoice_url'];
+            }
 
             // Create Transaction
             $transaction = Transaction::create($data);
@@ -104,12 +109,14 @@ class TransactionsController extends BaseController
                 TransactionDetails::create($detail);
             }
 
+            // Create Holder only once
+            $holderCategoryId = HolderCategories::where('description', 'Visitor Online')->value('id');
+            $holderObj['category_id'] = $holderCategoryId;
+            $holder = Holder::create($holderObj);
+
             // Looping for Create Ticket
             foreach ($validate['tickets'] as $ticket) {
                 $eventTicket = EventTicket::find($ticket['id']);
-                $holderCategoryId = HolderCategories::where('description', 'Visitor Online')->value('id');
-                $holderObj['category_id'] = $holderCategoryId;
-                $holder = Holder::create($holderObj);
 
                 $paymentId = $eventTicket['event_ticket_category_id'];
                 $validity = ValidityTicket::where('id', $eventTicket['validity_type_id'])->first();
@@ -139,10 +146,12 @@ class TransactionsController extends BaseController
                     'created_by' => $validate['name']
                 ];
 
-                $ticketId = Utils::generateRandomString();
+                for ($i = 0; $i < $ticket['quantity']; $i++) {
+                    $ticketId = Utils::generateRandomString();
 
-                // Create Ticket
-                Ticket::create(array_merge($data, ['id' => $ticketId]));
+                    // Create Ticket
+                    Ticket::create(array_merge($data, ['id' => $ticketId]));
+                }
 
                 // Decrease event ticket quota
                 $eventTicket->decrement('quota', $ticket['quantity']);

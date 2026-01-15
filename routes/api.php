@@ -31,10 +31,11 @@ Route::post('/auth', [AuthController::class, 'login'])->middleware(['validate.x.
 
 Route::prefix('main')->middleware(['validate.x.functions', 'cors'])->group(function () {
     Route::get('/', [MainEventController::class, 'index']);
+    Route::get('/{id}', [MainEventController::class, 'find']);
 });
 
-Route::prefix('payment')->middleware(['validate.x.functions', 'cors'])->group(function () {
-    Route::post('/', [TransactionsController::class, 'create']);
+Route::prefix('transaction')->middleware(['validate.x.functions', 'cors'])->group(function () {
+    Route::post('/place-order', [TransactionsController::class, 'create']);
 });
 
 Route::middleware(['auth:sanctum', 'validate.x.functions', 'cors'])->group(function () {

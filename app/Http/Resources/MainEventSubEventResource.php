@@ -17,7 +17,7 @@ class MainEventSubEventResource extends JsonResource
     {
         return [
             'id' => Utils::encode($this->id),
-            'event_name' => $this->title,
+            'name' => $this->title,
         ];
     }
 }
