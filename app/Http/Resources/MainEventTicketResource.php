@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Helpers\Utils;
+use App\Models\TransactionDetails;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -32,6 +33,22 @@ class MainEventTicketResource extends JsonResource
             $eventHour = $start->format('H.i') . ' - ' . $end->format('H.i') . ' WIB';
         }
 
+        $isDisplay = $this->sale_start_date && $this->sale_end_date ? Utils::isDateRange($this->sale_start_date, $this->sale_end_date) : true;
+
+        // Check if come from additional event and have transaction id
+        // and validate if event ticket is should display or not based on parent or selected event ticket in previous payment
+        if ($request->has("transaction_id")) {
+            $transactionId = $request["transaction_id"];
+            $eventTicketStartDates = TransactionDetails::with("eventTicket")->where("transaction_id", $transactionId)->get()->pluck("eventTicket.start_date");
+
+            $eventTicketStartDates = collect($eventTicketStartDates);
+            $startDate = Carbon::parse($this->start_date)->format('Y-m-d');
+
+            $isDisplay = $eventTicketStartDates->contains(function ($value) use ($startDate) {
+                return Carbon::parse($value)->format('Y-m-d') === $startDate;
+            });
+        }
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -42,7 +59,7 @@ class MainEventTicketResource extends JsonResource
             'event_hour' => $eventHour,
             'price' => $this->price ?? 0,
             'is_available' => $this->quota > 0,
-            'is_display' => $this->sale_start_date && $this->sale_end_date ? Utils::isDateRange($this->sale_start_date, $this->sale_end_date) : true,
+            'is_display' => $isDisplay,
             'is_expired' => Utils::isExpired($this->end_date),
             'min' => $this->min_quantity,
             'max' => $this->max_quantity,

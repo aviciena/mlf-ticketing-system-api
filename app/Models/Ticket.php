@@ -9,6 +9,8 @@ class Ticket extends BaseModel
 
     protected $fillable = [
         'id',
+        'parent_id',
+        'transaction_id',
         'events_ticket_id',
         'ticket_status_id',
         'payment_status_id',

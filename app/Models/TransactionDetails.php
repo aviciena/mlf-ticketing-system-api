@@ -13,4 +13,16 @@ class TransactionDetails extends Model
         'price',
         'subtotal'
     ];
+
+    // Relasi ke tabel Transactions
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_id', 'id');
+    }
+
+    // Relasi ke tabel EventTickets
+    public function eventTicket()
+    {
+        return $this->belongsTo(EventTicket::class, 'event_ticket_id', 'id');
+    }
 }

@@ -31,7 +31,8 @@ Route::post('/auth', [AuthController::class, 'login'])->middleware(['validate.x.
 
 Route::prefix('main')->middleware(['validate.x.functions', 'cors'])->group(function () {
     Route::get('/', [MainEventController::class, 'index']);
-    Route::get('/{id}', [MainEventController::class, 'find']);
+    Route::post('/{id}', [MainEventController::class, 'find']);
+    Route::post('/', [MainEventController::class, 'findAdditionalEvent']);
 });
 
 Route::prefix('transaction')->middleware(['validate.x.functions', 'cors'])->group(function () {

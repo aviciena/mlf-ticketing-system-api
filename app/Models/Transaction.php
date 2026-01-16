@@ -34,4 +34,9 @@ class Transaction extends BaseModel
     {
         return $this->hasMany(Ticket::class);
     }
+
+    public function details()
+    {
+        return $this->hasMany(TransactionDetails::class, 'transaction_id', 'id');
+    }
 }
