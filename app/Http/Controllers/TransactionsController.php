@@ -14,6 +14,7 @@ use App\Models\TransactionDetails;
 use App\Models\ValidityTicket;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -211,5 +212,87 @@ class TransactionsController extends BaseController
             Log::info('Full Error: ' . json_encode($e->getFullError()));
             return null;
         }
+    }
+
+    public function orderConfirmation(Request $request)
+    {
+        $validate = $request->validate([
+            'transaction_id' => 'required|string|exists:transactions,id',
+            'second_transaction_id' => 'nullable|string|exists:transactions,id',
+        ]);
+
+        $transaction = Transaction::with(['event', 'event.venue', 'tickets' => function ($query) {
+            $query->join('event_tickets', 'tickets.events_ticket_id', '=', 'event_tickets.id')
+                ->orderBy('event_tickets.start_date', 'asc')
+                ->select('tickets.*');
+        }, 'tickets.holder', 'tickets.eventTicket'])
+            ->where('id', $validate['transaction_id'])
+            ->first();
+
+        $event = [
+            'name' => $transaction->event->title,
+            'date' => Utils::formatRange($transaction->event->start_date, $transaction->event->end_date),
+            'hours' => Utils::formatRangeHour($transaction->event->start_date, $transaction->event->end_date),
+            'location' => [
+                'name' => $transaction->event->venue->title . ' ' . $transaction->event->venue->street,
+                'maps' => $transaction->event->venue->maps
+            ]
+        ];
+
+        $holder = [
+            'name' => '',
+            'email' => '',
+            'mobile_phone' => ''
+        ];
+
+        $ticketList = [];
+        $index = 1;
+        foreach ($transaction->tickets as $ticket) {
+            $descriptions = ['Tiket Masuk ke Venue.'];
+            $additionalTickets = Ticket::with(['eventTicket' => function ($query) {
+                $query->select('id', 'title', 'start_date', 'event_id')->with(['event' => function ($q) {
+                    $q->select('id', 'title');
+                }]);;
+            }])
+                ->whereHas('eventTicket', function ($query) use ($ticket) {
+                    $query->whereDate('start_date', Carbon::parse($ticket->eventTicket->start_date)->format('Y-m-d'));
+                })
+                ->where('parent_transaction_id', $validate['transaction_id'])->select('id', 'events_ticket_id')
+                ->get()
+                ->unique('events_ticket_id')
+                ->values();
+
+            if ($additionalTickets) {
+                foreach ($additionalTickets as $additionalTicket) {
+                    array_push($descriptions, 'Dauroh' . ' ' . $additionalTicket->eventTicket->title);
+                }
+            }
+
+            $ticketObj = [
+                'id' => $index,
+                'title' => $ticket->eventTicket->title,
+                'date' => Utils::getDateFormat($ticket->eventTicket->start_date) . ' | ' . Utils::formatRangeHour($ticket->eventTicket->start_date, $ticket->eventTicket->end_date),
+                'qr_code' => $ticket->id,
+                'description' => $descriptions
+            ];
+
+            if ($index == 1) {
+                $holder = $ticket->holder;
+            }
+
+            $index += 1;
+
+            array_push($ticketList, $ticketObj);
+        }
+
+        $response = [
+            'name' => $holder['name'],
+            'email' => $holder['email'],
+            'phone' => $holder['mobile_phone'],
+            'event' => $event,
+            'ticket_list' => $ticketList
+        ];
+
+        return $this->sendResponse($response, 'Order Confirmation retrieved successfully.');
     }
 }

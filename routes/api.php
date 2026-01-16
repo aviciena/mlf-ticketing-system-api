@@ -37,6 +37,7 @@ Route::prefix('main')->middleware(['validate.x.functions', 'cors'])->group(funct
 
 Route::prefix('transaction')->middleware(['validate.x.functions', 'cors'])->group(function () {
     Route::post('/place-order', [TransactionsController::class, 'create']);
+    Route::post('/order-confirmation', [TransactionsController::class, 'orderConfirmation']);
 });
 
 Route::middleware(['auth:sanctum', 'validate.x.functions', 'cors'])->group(function () {
