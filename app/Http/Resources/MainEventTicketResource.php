@@ -36,7 +36,7 @@ class MainEventTicketResource extends JsonResource
         $isDisplay = $this->sale_start_date && $this->sale_end_date ? Utils::isDateRange($this->sale_start_date, $this->sale_end_date) : true;
 
         // Check if come from additional event and have transaction id
-        // and validate if event ticket is should display or not based on parent or selected event ticket in previous payment
+        // and validate if event ticket is should display or not based on parent or selected event ticket in previous select main event
         if ($request->has("transaction_id")) {
             $transactionId = $request["transaction_id"];
             $eventTicketStartDates = TransactionDetails::with("eventTicket")->where("transaction_id", $transactionId)->get()->pluck("eventTicket.start_date");

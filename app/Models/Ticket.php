@@ -9,7 +9,7 @@ class Ticket extends BaseModel
 
     protected $fillable = [
         'id',
-        'parent_id',
+        'parent_transaction_id',
         'transaction_id',
         'events_ticket_id',
         'ticket_status_id',
@@ -71,8 +71,8 @@ class Ticket extends BaseModel
     }
 
     // Untuk mengetahui induk dari sub-event ini
-    public function parentTicket()
+    public function parentTransaction()
     {
-        return $this->belongsTo(Ticket::class, 'parent_id');
+        return $this->belongsTo(Transaction::class, 'parent_transaction_id');
     }
 }

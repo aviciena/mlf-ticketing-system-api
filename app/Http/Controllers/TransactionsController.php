@@ -65,6 +65,7 @@ class TransactionsController extends BaseController
         }
 
         // Create Xendit Request Payment
+        $xenditResult = null;
         if ($totalPrice > 0) {
             $xenditResult = $this->doGetXendit([
                 'invoiceId' => $invoiceId,
@@ -106,6 +107,7 @@ class TransactionsController extends BaseController
             // Create Transaction Details
             foreach ($transactionDetails as $detail) {
                 $detail['transaction_id'] = $transaction->id;
+                $detail['price'] = $detail['price'] ?? 0;
                 TransactionDetails::create($detail);
             }
 
@@ -146,6 +148,15 @@ class TransactionsController extends BaseController
                     'created_by' => $validate['name']
                 ];
 
+                if (isset($validate['prev_transaction_id'])) {
+                    $prevQty = Transaction::where('id', $validate['prev_transaction_id'])->value('total_ticket');
+
+                    if ($prevQty) {
+                        $data['parent_transaction_id'] = $validate['prev_transaction_id'];
+                        $ticket['quantity'] = $prevQty;
+                    }
+                }
+
                 for ($i = 0; $i < $ticket['quantity']; $i++) {
                     $ticketId = Utils::generateRandomString();
 
@@ -166,11 +177,13 @@ class TransactionsController extends BaseController
             ], 500);
         }
 
+        $response = ['transaction_id' => $transaction->id];
 
-        return $this->sendResponse([
-            'invoice_url' => $xenditResult['invoice_url'],
-            'transaction_id' => $transaction->id
-        ], 'Transaction Created');
+        if ($xenditResult && $xenditResult['invoice_url']) {
+            $response['invoice_url'] = $xenditResult['invoice_url'];
+        }
+
+        return $this->sendResponse($response, 'Transaction Created');
     }
 
     private function doGetXendit($data)

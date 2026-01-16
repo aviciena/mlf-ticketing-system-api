@@ -58,6 +58,7 @@ class CreateTransactionRequest extends FormRequest
 
             'donation_amount' => 'nullable|integer',
             'fee' => 'required|integer',
+            'prev_transaction_id' => 'nullable|string|exists:transactions,id'
         ];
     }
 }
