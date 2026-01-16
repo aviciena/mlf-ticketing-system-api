@@ -6,8 +6,6 @@ use App\Helpers\Utils;
 use App\Http\Resources\MainEventResource;
 use App\Models\Events;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class MainEventController extends BaseController
 {
