@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Helpers\HashidHelper;
 use App\Http\Resources\UserResource;
-use App\Models\Role;
 use App\Models\Roles;
 use App\Models\User;
 use Illuminate\Http\Request;

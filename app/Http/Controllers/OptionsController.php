@@ -8,6 +8,7 @@ use App\Models\Events;
 use App\Models\EventTicket;
 use App\Models\HolderCategories;
 use App\Models\PaymentStatus;
+use App\Models\Roles;
 use App\Models\TicketStatus;
 use App\Models\ValidityTicket;
 use Illuminate\Http\Request;
@@ -34,6 +35,12 @@ class OptionsController extends BaseController
         $validityTickets = ValidityTicket::whereIn('code', ['sd', 'ad', 'adt'])->get();
         $holderCategories = HolderCategories::all();
         $status = TicketStatus::whereNotIn('code', ['canceled'])->get();
+        $roles = Roles::select('id', 'code', 'description')->get()->map(function ($role) {
+            return [
+                'id'    => $role->code,
+                'title' => $role->description
+            ];
+        });
 
         $subEvents = null;
         if (isset($event->subEvents) && count($event->subEvents) > 0) {
@@ -64,6 +71,7 @@ class OptionsController extends BaseController
                 'validity_ticket' => StatusResource::collection($validityTickets),
                 'categories' => StatusResource::collection($holderCategories),
                 'status' => StatusResource::collection($status),
+                'roles' => $roles
             ],
             'Options retrieved successfully.',
         );
