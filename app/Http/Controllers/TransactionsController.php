@@ -95,7 +95,7 @@ class TransactionsController extends BaseController
                 'subtotal' => $ubTotal,
                 'total_ticket' => $totalTicket,
                 'total_price' => $totalPrice,
-                'status' => 'pending'
+                'status' => $totalPrice > 0 ? 'pending' : 'settlement'
             ];
 
             if ($xenditResult && $xenditResult['invoice_url']) {
@@ -124,7 +124,7 @@ class TransactionsController extends BaseController
                 $paymentId = $eventTicket['event_ticket_category_id'];
                 $validity = ValidityTicket::where('id', $eventTicket['validity_type_id'])->first();
 
-                $ticketStatus = "Booked";
+                $ticketStatus = $totalPrice > 0 ? "Booked" : "Issued";
 
                 if ($validity['code'] != "ad") {
                     $now = Carbon::now();

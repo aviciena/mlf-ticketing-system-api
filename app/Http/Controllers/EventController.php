@@ -11,10 +11,13 @@ use App\Models\EventStatus;
 use App\Models\EventTicket;
 use App\Models\GateTicket;
 use App\Models\Ticket;
+use App\Models\Transaction;
+use App\Models\TransactionDetails;
 use App\Models\User;
 use App\Services\EventIdGenerator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -212,57 +215,103 @@ class EventController extends BaseController
             ], 422);
         }
 
-        // Get all user ID based on event id
-        $users = User::where('event_id', $event->id)->pluck('id');
-        User::whereIn('id', $users)->update(['event_id' => null]);
+        try {
+            DB::beginTransaction();
+            // Get all transaction id by event id
+            $transactionsId = Transaction::where('event_id', $event->id)->pluck('id');
+            $subEventsId = Events::where('parent_id', $event->id)->pluck('id');
 
-        // Get all event tickets id based on event id
-        $eventTicketsId = EventTicket::where('event_id', $event->id)->pluck('id');
+            // Get all user ID based on event id
+            $users = User::where('event_id', $event->id)->pluck('id');
+            User::whereIn('id', $users)->update(['event_id' => null]);
 
-        // Get all ticket ID based on event ticket id
-        $ticketIds = Ticket::whereIn('events_ticket_id', $eventTicketsId)->pluck('id');
+            // Get all event tickets id based on event id
+            $eventTicketsId = EventTicket::where('event_id', $event->id)->pluck('id');
 
-        // Delete all related ticket in gates ticket
-        GateTicket::whereIn('ticket_id', $ticketIds)->delete();
+            // Get all ticket ID based on event ticket id
+            $ticketIds = Ticket::whereIn('events_ticket_id', $eventTicketsId)->pluck('id');
 
-        // Delete all related ticket
-        Ticket::whereIn('id', $ticketIds)->delete();
+            // Delete all related ticket in gates ticket
+            GateTicket::whereIn('ticket_id', $ticketIds)->delete();
 
-        // Delete event ticket
-        EventTicket::whereIn('id', $eventTicketsId)->delete();
+            // Delete all related ticket
+            Ticket::whereIn('id', $ticketIds)->delete();
 
-        // Delete Banners Event
-        $paths = BannerEvents::where('events_id', $event->id)->pluck('path');
+            // Get all sub event tickets id based on event id
+            $eventTicketsId = EventTicket::where('event_id', $subEventsId)->pluck('id');
 
-        // 1. Siapkan path lengkap untuk semua file
-        $fullPaths = collect($paths)->map(fn($path) => $path)->toArray();
+            // Get all ticket ID based on sub event ticket id
+            $ticketIds = Ticket::whereIn('events_ticket_id', $eventTicketsId)->pluck('id');
 
-        // 2. Hapus semua file sekaligus dari storage
-        Storage::disk('public')->delete($fullPaths);
+            // Delete all related ticket sub event
+            Ticket::whereIn('id', $ticketIds)->delete();
 
-        // 3. Hapus semua record dari database dengan satu query
-        BannerEvents::where('events_id', $event->id)->delete();
+            // Delete Transaction Details
+            TransactionDetails::whereIn('transaction_id', $transactionsId)->delete();
 
-        // Delete banner event sub-events
-        $subEventsId = Events::where('parent_id', $event->id)->pluck('id');
-        $paths = BannerEvents::whereIn('events_id', $subEventsId)->pluck('path');
+            // Get all transaction id by sub event id
+            $transactionsId = Transaction::where('event_id', $subEventsId)->pluck('id');
 
-        // 1. Siapkan path lengkap untuk semua file
-        $fullPaths = collect($paths)->map(fn($path) => $path)->toArray();
+            // Delete Transaction Details
+            TransactionDetails::whereIn('transaction_id', $transactionsId)->delete();
 
-        // 2. Hapus semua file sekaligus dari storage
-        Storage::disk('public')->delete($fullPaths);
+            // Delete event ticket
+            EventTicket::where('event_id', $event->id)->delete();
 
-        // 3. Hapus semua record dari database dengan satu query
-        BannerEvents::whereIn('events_id', $subEventsId)->delete();
+            // Delete sub event ticket
+            EventTicket::whereIn('event_id', $subEventsId)->delete();
 
-        $event->delete();
+            // Delete Banners Event
+            $paths = BannerEvents::where('events_id', $event->id)->pluck('path');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Event deleted successfully.',
-            'data' => []
-        ]);
+            // 1. Siapkan path lengkap untuk semua file
+            $fullPaths = collect($paths)->map(fn($path) => $path)->toArray();
+
+            // 2. Hapus semua file sekaligus dari storage
+            Storage::disk('public')->delete($fullPaths);
+
+            // 3. Hapus semua record dari database dengan satu query
+            BannerEvents::where('events_id', $event->id)->delete();
+
+            // Delete banner event sub-events
+            $paths = BannerEvents::whereIn('events_id', $subEventsId)->pluck('path');
+
+            // 1. Siapkan path lengkap untuk semua file
+            $fullPaths = collect($paths)->map(fn($path) => $path)->toArray();
+
+            // 2. Hapus semua file sekaligus dari storage
+            Storage::disk('public')->delete($fullPaths);
+
+            // 3. Hapus semua record dari database dengan satu query
+            BannerEvents::whereIn('events_id', $subEventsId)->delete();
+
+            // Delete Transaction
+            Transaction::where('event_id', $event->id)->delete();
+
+            // Delete Transaction Sub Events
+            Transaction::whereIn('event_id', $subEventsId)->delete();
+
+            // Delete sub events
+            Events::where('parent_id', $event->id)->delete();
+
+            // Delete event
+            $event->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Event deleted successfully.',
+                'data' => []
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus event ' . $event->title . '.',
+                'detail' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function upload(Request $request)
