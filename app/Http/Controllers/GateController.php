@@ -26,8 +26,8 @@ class GateController extends BaseController
             $query->select('parent_id', 'id', 'title as name', 'start_date', 'end_date');
         }])->where('id', $eventId)->first('id');
 
-        $eventList = [$event->id];
-        if ($event->subEvents && count($event->subEvents) > 0 && $user->role->code == 'admin') {
+        $eventList = isset($event->id) ? [$event->id] : [];
+        if (isset($event->subEvents) && count($event->subEvents) > 0 && $user->role->code == 'admin') {
             foreach ($event->subEvents as $subEvent) {
                 array_push($eventList, $subEvent->id);
             }

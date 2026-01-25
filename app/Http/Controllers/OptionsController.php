@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\EventTicketResource;
 use App\Http\Resources\EventTicketsOptionsResource;
 use App\Http\Resources\StatusResource;
-use App\Models\Event;
 use App\Models\Events;
 use App\Models\EventTicket;
 use App\Models\HolderCategories;
@@ -38,7 +36,7 @@ class OptionsController extends BaseController
         $status = TicketStatus::whereNotIn('code', ['canceled'])->get();
 
         $subEvents = null;
-        if ($event->subEvents && count($event->subEvents) > 0) {
+        if (isset($event->subEvents) && count($event->subEvents) > 0) {
             $subEvents = $event->subEvents->toArray();
             $parentData = [
                 'id' => $event->id,
@@ -56,7 +54,7 @@ class OptionsController extends BaseController
                     'name' => $event->title ?? null,
                     'start_date' => $event->start_date ?? null,
                     'end_date' => $event->end_date ?? null,
-                    'is_completed' => $event->status ? $event->status->code == "completed" : false,
+                    'is_completed' => isset($event->status) ? $event->status->code == "completed" : false,
                     'sub_events' => $subEvents,
                 ],
                 'event_list' => $eventList,
