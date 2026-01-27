@@ -12,8 +12,8 @@ class MainEventBannerResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray(Request $request): string
     {
-        return [asset('storage/' . $this->path)];
+        return asset('storage/' . $this->path);
     }
 }

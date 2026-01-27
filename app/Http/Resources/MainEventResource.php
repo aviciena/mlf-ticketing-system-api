@@ -21,7 +21,7 @@ class MainEventResource extends JsonResource
 
         return [
             'id' => Utils::encode($this->id),
-            'banners' => $isHaveBanners ? MainEventBannerResource::collection($this->whenLoaded('banners'))[0] : null,
+            'banners' => $isHaveBanners ? MainEventBannerResource::collection($this->whenLoaded('banners')) : null,
             'title' => $this->title,
             'date' => Utils::formatRange($this->start_date, $this->end_date),
             'hours' => Utils::formatRangeHour($this->start_date, $this->end_date),
