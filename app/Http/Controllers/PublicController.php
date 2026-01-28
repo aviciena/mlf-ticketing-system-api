@@ -2,10 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\Utils;
 use App\Models\Ticket;
-use App\Models\Transaction;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
