@@ -281,6 +281,7 @@ class TransactionsController extends BaseController
                 'title' => $ticket->eventTicket->title,
                 'date' => Utils::getDateFormat($ticket->eventTicket->start_date) . ' | ' . Utils::formatRangeHour($ticket->eventTicket->start_date, $ticket->eventTicket->end_date),
                 'qr_code' => $ticket->id,
+                'url' => config('services.app.base_path') . '/qr-image/' . $ticket->id,
                 'description' => $descriptions
             ];
 

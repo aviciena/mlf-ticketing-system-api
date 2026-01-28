@@ -10,6 +10,7 @@ use App\Http\Controllers\LogImportTicketsController;
 use App\Http\Controllers\MainEventController;
 use App\Http\Controllers\OptionsController;
 use App\Http\Controllers\PrintTemplatesController;
+use App\Http\Controllers\PublicController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TransactionsController;
 use App\Http\Controllers\UserController;
@@ -28,6 +29,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('/auth', [AuthController::class, 'login'])->middleware(['validate.x.functions', 'cors']);
+
+Route::get('/qr-image/{id}', [PublicController::class, 'getQRImage']);
 
 Route::prefix('main')->middleware(['validate.x.functions', 'cors'])->group(function () {
     Route::get('/', [MainEventController::class, 'index']);

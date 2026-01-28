@@ -31,6 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'app' => [
+        'base_path' => env('APP_URL')
+    ],
+
     'xendit' => [
         'secret_key' => env('XENDIT_SECRET_KEY'),
         'web_hook_token' => env('XENDIT_WEBHOOK_TOKEN'),
