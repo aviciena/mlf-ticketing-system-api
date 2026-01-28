@@ -20,8 +20,9 @@ return new class extends Migration
             $table->integer("total_ticket");
             $table->decimal('total_price', 15, 2);
             $table->string("payment_type")->nullable();
+            $table->string("xendit_invoice_id");
             $table->string('reference_code')->unique()->nullable();
-            $table->enum('status', ['pending', 'settlement', 'cancel'])->default('pending');
+            $table->enum('status', ['pending', 'settled', 'cancel'])->default('pending');
             $table->timestamps();
 
             $table->foreign('event_id')->references('id')->on('events')->onDelete('RESTRICT');

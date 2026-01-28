@@ -60,10 +60,10 @@ class TransactionsController extends BaseController
         ];
 
         $xenditItems = $validate['tickets'];
-        $xenditItems[] = ['name' => 'fee', 'price' => $validate['fee'], 'quantity' => 1];
         if ($validate['donation_amount'] > 0) {
-            $xenditItems[] = ['name' => 'donation', 'price' => $validate['donation_amount'], 'quantity' => 1];
+            $xenditItems[] = ['name' => 'donasi', 'price' => $validate['donation_amount'], 'quantity' => 1];
         }
+        $xenditItems[] = ['name' => 'fee', 'price' => $validate['fee'], 'quantity' => 1];
 
         // Create Xendit Request Payment
         $xenditResult = null;
@@ -100,6 +100,7 @@ class TransactionsController extends BaseController
 
             if ($xenditResult && $xenditResult['invoice_url']) {
                 $data['reference_code'] = $xenditResult['invoice_url'];
+                $data['xendit_invoice_id'] = $xenditResult['id'];
             }
 
             // Create Transaction
@@ -208,8 +209,7 @@ class TransactionsController extends BaseController
         try {
             return $apiInstance->createInvoice($createInvoiceRequest);
         } catch (\Xendit\XenditSdkException $e) {
-            Log::info('Exception when calling InvoiceApi->createInvoice: ' . $e->getMessage());
-            Log::info('Full Error: ' . json_encode($e->getFullError()));
+            Log::error('Exception when calling InvoiceApi->createInvoice: ' . $e->getMessage());
             return null;
         }
     }
@@ -220,6 +220,14 @@ class TransactionsController extends BaseController
             'transaction_id' => 'required|string|exists:transactions,id',
             'second_transaction_id' => 'nullable|string|exists:transactions,id',
         ]);
+
+        // First Transaction update
+        $this->doUpdateTransactionStatus($validate['transaction_id']);
+
+        // Second Transaction update
+        if (isset($validate['second_transaction_id'])) {
+            $this->doUpdateTransactionStatus($validate['second_transaction_id']);
+        }
 
         $transaction = Transaction::with(['event', 'event.venue', 'tickets' => function ($query) {
             $query->join('event_tickets', 'tickets.events_ticket_id', '=', 'event_tickets.id')
@@ -294,5 +302,34 @@ class TransactionsController extends BaseController
         ];
 
         return $this->sendResponse($response, 'Order Confirmation retrieved successfully.');
+    }
+
+    private function doUpdateTransactionStatus($invoiceId)
+    {
+        $transaction = Transaction::where('id', $invoiceId)
+            ->select('id', 'xendit_invoice_id', 'status')
+            ->first();
+
+        if ($transaction && $transaction->xendit_invoice_id && $transaction->status === "pending") {
+            $apiInstance = new InvoiceApi();
+            $invoice_id = $transaction->xendit_invoice_id;
+
+            try {
+                $xenditResult = $apiInstance->getInvoiceById($invoice_id);
+                if ($xenditResult && $xenditResult['status']) {
+                    $transaction->update([
+                        'status' => strtolower($xenditResult['status'])
+                    ]);
+
+                    if (strtolower($xenditResult['status']) == 'settled') {
+                        // Update Ticket status
+                        $ticketStatusId = TicketStatus::where('description', 'Issued')->value('id');
+                        Ticket::where('transaction_id', $invoiceId)->update(['ticket_status_id' => $ticketStatusId, 'updated_at' => now()]);
+                    }
+                }
+            } catch (\Xendit\XenditSdkException $e) {
+                Log::error($e->getFullError());
+            }
+        }
     }
 }

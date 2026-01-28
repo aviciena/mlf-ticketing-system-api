@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Venue;
+use App\Models\Venues;
 
 class VenueIdGenerator
 {
@@ -26,7 +26,7 @@ class VenueIdGenerator
     {
         do {
             $id = self::generate($title);
-        } while (Venue::where('id', $id)->exists());
+        } while (Venues::where('id', $id)->exists());
 
         return $id;
     }

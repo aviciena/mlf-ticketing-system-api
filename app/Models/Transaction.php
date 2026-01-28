@@ -16,6 +16,7 @@ class Transaction extends BaseModel
         'total_ticket',
         'total_price',
         'payment_type',
+        'xendit_invoice_id',
         'reference_code',
         'status'
     ];

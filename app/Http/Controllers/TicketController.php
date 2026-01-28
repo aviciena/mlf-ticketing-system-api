@@ -61,6 +61,10 @@ class TicketController extends BaseController
                 $q->where('tickets.id', 'like', "{$searchTerm}%")
                     ->orWhereHas('holder', function ($subQuery) use ($searchTerm) {
                         $subQuery->where('name', 'like', "%{$searchTerm}%");
+                    })->orWhereHas('holder', function ($subQuery) use ($searchTerm) {
+                        $subQuery->where('email', 'like', "%{$searchTerm}%");
+                    })->orWhereHas('holder', function ($subQuery) use ($searchTerm) {
+                        $subQuery->where('mobile_phone', 'like', "%{$searchTerm}%");
                     });
             });
         }
