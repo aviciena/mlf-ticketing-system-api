@@ -56,6 +56,18 @@ class Utils
         return $start->format('H.i') . ' - ' . $end->format('H.i') . ' WIB';
     }
 
+    public static function formatTicketValidation($dateStart, $dateEnd)
+    {
+        $start = Carbon::parse($dateStart)->locale('id'); // Set bahasa Indonesia
+        $end = Carbon::parse($dateEnd)->locale('id');
+
+        // Aktifkan translasi bulan ke Indonesia
+        $start->settings(['formatFunction' => 'translatedFormat']);
+        $end->settings(['formatFunction' => 'translatedFormat']);
+
+        return $start->translatedFormat('d/m/Y H:i') . ' - ' . $end->translatedFormat('d/m/Y H:i');
+    }
+
     public static function encode($string)
     {
         return base64_encode($string);

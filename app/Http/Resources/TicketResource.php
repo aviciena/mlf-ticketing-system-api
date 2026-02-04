@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Helpers\Utils;
 use App\Models\GateTicket;
 use App\Models\Ticket;
 use App\Models\TicketStatus;
@@ -23,7 +24,7 @@ class TicketResource extends JsonResource
 
         $isExpired = $statusCode !== "booked" && $statusCode != "issued";
         Carbon::setLocale('id');
-        $validateTicket = Carbon::parse($this->eventTicket?->start_date)->format('d/m/Y H:i') . '-' . Carbon::parse($this->eventTicket?->end_date)->format('d/m/Y H:i');
+        $validateTicket = Utils::formatTicketValidation($this->eventTicket?->start_date, $this->eventTicket?->end_date);
 
         $now = Carbon::now();
         if ($now->greaterThan($this->eventTicket?->end_date)) {
